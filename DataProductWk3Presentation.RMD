@@ -1,0 +1,73 @@
+---
+title: "DataProduct Week3 Plotly Presentation"
+author: "rmydeen"
+date: "5/9/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE)
+library(plotly)
+library(data.table)
+library(tidyr)
+library(lubridate)
+library(zoo)
+library(openxlsx)
+```
+
+```{r echo=FALSE}
+pickdate<-"2020-05-08"
+xlsfile <-paste0("http://www.ecdc.europa.eu/sites/default/files/documents/COVID-19-geographic-disbtribution-worldwide-",pickdate,".xlsx")
+URL<-paste0(xlsfile)
+filename<-paste0("data\\covidcases_",pickdate,".xlsx")
+if (!file.exists(filename))
+  download.file(URL,
+                destfile=filename,
+                mode="wb")
+colClass <- c("date","integer","integer","integer","integer","integer","character","character","chracter","integer","character")
+covidcases<- read.xlsx(filename,sheet=1)
+#Convert to Datesas.character(covidcases$dateRep)
+covidcases$dateRep<-as.Date(covidcases$dateRep-25569, origin="1970-01-01")
+
+df<-covidcases %>% group_by(date=dateRep,countryCode=countryterritoryCode) %>%
+  summarise(cases=sum(cases),deaths=sum(deaths),population=mean(popData2018))
+
+df_world<-covidcases %>% group_by(date=dateRep) %>%
+  summarise(cases=sum(cases),deaths=sum(deaths),population=mean(popData2018))
+#filter(countryCode=="IND") %>% 
+
+total_cases <- sum(df$cases)
+total_deaths <- sum(df$deaths)
+```
+## Covid-19 Presenation
+
+This is an R Markdown presentation. Presents Covid-19 cases worldwide and india.
+
+## Cases Considered
+
+- Worldwide Overall
+- India Only
+
+## Worldwide Cases
+```{r echo=FALSE}
+fig <- plot_ly(df_world, x = ~date, y = ~cases, type = 'scatter', mode = 'lines+markers+text', color=I('blue'),name = 'Covid-19 World Cases')
+fig <- fig %>% add_trace(y = ~deaths,color=I('red'), name = 'Deaths') %>% layout(title=paste0("Total Cases  World:",total_cases,",Deaths:",total_deaths," As of:",pickdate))
+fig
+```
+
+## India cases
+
+```{r echo=FALSE}
+df_india<-df  %>%filter(countryCode=="IND")
+total_cases_ind <- sum(df_india$cases)
+total_deaths_ind <- sum(df_india$deaths)
+fig_ind <- plot_ly(df_india, x = ~date, y = ~cases, type = 'scatter', mode = 'lines+markers+text', color=I('Green'),name = 'Covid-19 India Cases')
+fig_ind <- fig_ind %>% add_trace(y = ~deaths,color=I('Orange'), name = 'Deaths') %>% layout(title=paste0("Total India Cases:",total_cases_ind," Deaths:",total_deaths_ind," As of:",pickdate))
+fig_ind
+
+```
+## Code Base - HTML Links
+Code available in https://github.com/rabeekraja/DataProductsWk3
+Web Page: https://rabeekraja.github.io/DataProductsWeek3Plotly.html
+
+
